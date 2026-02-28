@@ -90,6 +90,9 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  // DEBUG — log raw Groq materials before any merging
+  console.log("[analyze] Groq raw materials:", analysis.materials.map((m) => `${m.part} (${m.material_code})`));
+
   // 5b. Apply product lookup table — merge lookup materials into AI result
   const lookupMaterials = lookupProductMaterials(productName, analysis);
   if (lookupMaterials) {
@@ -123,6 +126,33 @@ export async function POST(request: NextRequest) {
 
     analysis = { ...analysis, materials: mergedMaterials };
   }
+
+  // DEBUG — log materials after lookup merge
+  console.log("[analyze] After lookup merge:", analysis.materials.map((m) => `${m.part} (${m.material_code})`));
+
+  // Safety deduplication after lookup merge — the lookup can reintroduce
+  // duplicates if Groq already returned a part twice and the lookup key was
+  // consumed on the first match, letting the second copy through unchanged.
+  {
+    const seen = new Map<string, DetectedMaterial>();
+    for (const mat of analysis.materials) {
+      const key = mat.part.toLowerCase().trim();
+      const existing = seen.get(key);
+      if (!existing) {
+        seen.set(key, mat);
+      } else {
+        const betterConfidence = mat.confidence > existing.confidence;
+        const sameConfidenceButHasCode =
+          mat.confidence === existing.confidence &&
+          mat.material_code !== null &&
+          existing.material_code === null;
+        if (betterConfidence || sameConfidenceButHasCode) seen.set(key, mat);
+      }
+    }
+    analysis = { ...analysis, materials: Array.from(seen.values()) };
+  }
+
+  console.log("[analyze] Final materials sent to client:", analysis.materials.map((m) => `${m.part} (${m.material_code})`));
 
   // 6. RAG legal context
   const materialQuery = analysis.materials
