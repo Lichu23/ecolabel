@@ -1,0 +1,16 @@
+{
+  "functions": {
+    "src/app/api/analyze/route.ts": {
+      "maxDuration": 60,
+      "memory": 512
+    },
+    "src/app/api/label/generate/route.ts": {
+      "maxDuration": 60,
+      "memory": 1024
+    },
+    "src/app/api/audit/export/route.ts": {
+      "maxDuration": 30,
+      "memory": 256
+    }
+  }
+}
