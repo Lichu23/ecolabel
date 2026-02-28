@@ -236,12 +236,32 @@ export async function analyzePackaging(
     throw err;
   }
 
-  // Deduplicate materials by part name — when multiple images show the same
-  // part, the model may report it more than once. Keep the entry with the
+  // Normalize part name synonyms so "tapa"/"tapón"/"cap" all map to the same
+  // canonical key for deduplication purposes. The displayed name keeps the
+  // model's original value (highest-confidence winner).
+  const PART_SYNONYMS: Record<string, string> = {
+    tapa: "tapón", cap: "tapón", cierre: "tapón", rosca: "tapón",
+    "tapa de rosca": "tapón", "tapa superior": "tapón",
+    body: "cuerpo", envase: "cuerpo", botella: "cuerpo",
+    recipiente: "cuerpo", contenedor: "cuerpo",
+    label: "etiqueta",
+    handle: "asa", "asa de transporte": "asa",
+    "film protector": "film", precinto: "film",
+    "base inferior": "base",
+  };
+
+  function canonicalPart(part: string): string {
+    const lower = part.toLowerCase().trim();
+    return PART_SYNONYMS[lower] ?? lower;
+  }
+
+  // Deduplicate materials by canonical part name — the model may report the
+  // same physical part under different names (tapa vs tapón) or multiple times
+  // when several images show the same component. Keep the entry with the
   // highest confidence; on a tie prefer the one that has a material_code.
   const seen = new Map<string, typeof parsed.materials[number]>();
   for (const mat of parsed.materials) {
-    const key = mat.part.toLowerCase().trim();
+    const key = canonicalPart(mat.part);
     const existing = seen.get(key);
     if (!existing) {
       seen.set(key, mat);
