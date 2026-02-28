@@ -236,6 +236,28 @@ export async function analyzePackaging(
     throw err;
   }
 
+  // Deduplicate materials by part name — when multiple images show the same
+  // part, the model may report it more than once. Keep the entry with the
+  // highest confidence; on a tie prefer the one that has a material_code.
+  const seen = new Map<string, typeof parsed.materials[number]>();
+  for (const mat of parsed.materials) {
+    const key = mat.part.toLowerCase().trim();
+    const existing = seen.get(key);
+    if (!existing) {
+      seen.set(key, mat);
+    } else {
+      const betterConfidence = mat.confidence > existing.confidence;
+      const sameConfidenceButHasCode =
+        mat.confidence === existing.confidence &&
+        mat.material_code !== null &&
+        existing.material_code === null;
+      if (betterConfidence || sameConfidenceButHasCode) {
+        seen.set(key, mat);
+      }
+    }
+  }
+  parsed.materials = Array.from(seen.values());
+
   // Enforce guided_query_required based on actual confidence values
   const hasLowConfidence = parsed.materials.some((m) => m.confidence < 0.8);
   parsed.guided_query_required = hasLowConfidence || parsed.overall_confidence < 0.8;
