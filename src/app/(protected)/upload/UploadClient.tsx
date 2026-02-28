@@ -469,9 +469,14 @@ export function UploadClient({ companyName }: { companyName: string }) {
               size="sm"
               onClick={() => {
                 URL.revokeObjectURL(preview.imageObjectUrl);
-                setPhase("form");
                 setPreview(null);
+                setConfirming(null);
+                setDecomposingData(null);
+                setFiles([]);
+                setPackagingUse("household");
+                setMarkingInputs(null);
                 setError(null);
+                setPhase("wizard");
               }}
               disabled={isSaving}
             >
