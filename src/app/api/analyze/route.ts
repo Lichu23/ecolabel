@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { analyzePackaging, type ImageInput } from "@/lib/groq-vision";
+import { analyzePackaging, canonicalPart, type ImageInput } from "@/lib/groq-vision";
 import { searchLegalContext } from "@/lib/rag";
 import { generateLabelSVG } from "@/lib/label-generator";
 import { labelSvgToPdf } from "@/lib/label-to-pdf";
@@ -96,25 +96,27 @@ export async function POST(request: NextRequest) {
   // 5b. Apply product lookup table — merge lookup materials into AI result
   const lookupMaterials = lookupProductMaterials(productName, analysis);
   if (lookupMaterials) {
-    // Build a map of lookup materials by part name for quick lookup
+    // Build a map of lookup materials keyed by canonical part name so that
+    // "tapa" (AI) matches "tapón" (lookup) via the same synonym normalisation.
     const lookupByPart = new Map<string, DetectedMaterial>(
-      lookupMaterials.map((m) => [m.part.toLowerCase(), m])
+      lookupMaterials.map((m) => [canonicalPart(m.part), m])
     );
 
-    // Override AI materials with lookup ONLY when AI is uncertain or has no code.
-    // If AI already identified the material with high confidence (≥0.8) and a
-    // material code, trust the visual evidence — the lookup is a fallback, not
-    // a replacement for clear visual detection (e.g. embossed recycling symbols).
+    // Merge: for each AI material, check if a lookup entry covers the same part.
+    // Always delete the matched key so it is NOT appended as "remaining" later.
+    // Override AI result only when AI is uncertain (confidence < 0.8 or no code).
     const mergedMaterials = analysis.materials.map((aiMat) => {
-      const matched = lookupByPart.get(aiMat.part.toLowerCase());
-      const aiIsConfident = aiMat.confidence >= 0.8 && aiMat.material_code !== null;
-      if (matched && !aiIsConfident) {
-        lookupByPart.delete(aiMat.part.toLowerCase());
-        return {
-          ...matched,
-          // Preserve AI visual evidence so users see what the AI saw
-          visual_evidence: aiMat.visual_evidence || matched.visual_evidence,
-        };
+      const key = canonicalPart(aiMat.part);
+      const matched = lookupByPart.get(key);
+      if (matched) {
+        lookupByPart.delete(key); // always consume — prevents duplicate append
+        const aiIsConfident = aiMat.confidence >= 0.8 && aiMat.material_code !== null;
+        if (!aiIsConfident) {
+          return {
+            ...matched,
+            visual_evidence: aiMat.visual_evidence || matched.visual_evidence,
+          };
+        }
       }
       return aiMat;
     });

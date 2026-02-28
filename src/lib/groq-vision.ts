@@ -38,6 +38,27 @@ const PackagingFormatSchema = z.object({
 
 type PackagingFormat = z.infer<typeof PackagingFormatSchema>;
 
+// ─── Part name normalisation ───────────────────────────────────────────────────
+// Maps common synonyms the model uses for the same physical part to a single
+// canonical key. Used for deduplication in groq-vision.ts and for lookup
+// matching in route.ts so "tapa" and "tapón" are treated as the same part.
+
+const PART_SYNONYMS: Record<string, string> = {
+  tapa: "tapón", cap: "tapón", cierre: "tapón", rosca: "tapón",
+  "tapa de rosca": "tapón", "tapa superior": "tapón",
+  body: "cuerpo", envase: "cuerpo", botella: "cuerpo",
+  recipiente: "cuerpo", contenedor: "cuerpo",
+  label: "etiqueta",
+  handle: "asa", "asa de transporte": "asa",
+  "film protector": "film", precinto: "film",
+  "base inferior": "base",
+};
+
+export function canonicalPart(part: string): string {
+  const lower = part.toLowerCase().trim();
+  return PART_SYNONYMS[lower] ?? lower;
+}
+
 /** One image sent to the analysis pipeline. */
 export interface ImageInput {
   base64: string;
@@ -239,21 +260,6 @@ export async function analyzePackaging(
   // Normalize part name synonyms so "tapa"/"tapón"/"cap" all map to the same
   // canonical key for deduplication purposes. The displayed name keeps the
   // model's original value (highest-confidence winner).
-  const PART_SYNONYMS: Record<string, string> = {
-    tapa: "tapón", cap: "tapón", cierre: "tapón", rosca: "tapón",
-    "tapa de rosca": "tapón", "tapa superior": "tapón",
-    body: "cuerpo", envase: "cuerpo", botella: "cuerpo",
-    recipiente: "cuerpo", contenedor: "cuerpo",
-    label: "etiqueta",
-    handle: "asa", "asa de transporte": "asa",
-    "film protector": "film", precinto: "film",
-    "base inferior": "base",
-  };
-
-  function canonicalPart(part: string): string {
-    const lower = part.toLowerCase().trim();
-    return PART_SYNONYMS[lower] ?? lower;
-  }
 
   // Deduplicate materials by canonical part name — the model may report the
   // same physical part under different names (tapa vs tapón) or multiple times
