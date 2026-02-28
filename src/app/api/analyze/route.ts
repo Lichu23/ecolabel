@@ -98,10 +98,14 @@ export async function POST(request: NextRequest) {
       lookupMaterials.map((m) => [m.part.toLowerCase(), m])
     );
 
-    // Override AI materials where the part name matches a lookup entry
+    // Override AI materials with lookup ONLY when AI is uncertain or has no code.
+    // If AI already identified the material with high confidence (≥0.8) and a
+    // material code, trust the visual evidence — the lookup is a fallback, not
+    // a replacement for clear visual detection (e.g. embossed recycling symbols).
     const mergedMaterials = analysis.materials.map((aiMat) => {
       const matched = lookupByPart.get(aiMat.part.toLowerCase());
-      if (matched) {
+      const aiIsConfident = aiMat.confidence >= 0.8 && aiMat.material_code !== null;
+      if (matched && !aiIsConfident) {
         lookupByPart.delete(aiMat.part.toLowerCase());
         return {
           ...matched,
