@@ -24,11 +24,13 @@ export function MaterialDecomposer({
   const [separability, setSeparability] = useState<Record<number, boolean | undefined>>(
     () => Object.fromEntries(materials.map((_, i) => [i, undefined]))
   );
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const allAnswered = materials.every((_, i) => separability[i] !== undefined);
 
   function handleComplete() {
-    if (!allAnswered) return;
+    if (!allAnswered || isSubmitting) return;
+    setIsSubmitting(true);
 
     const updatedMaterials: DetectedMaterial[] = materials.map((m, i) => ({
       ...m,
@@ -128,8 +130,8 @@ export function MaterialDecomposer({
         <Button variant="outline" onClick={onBack}>
           ← Atrás
         </Button>
-        <Button onClick={handleComplete} disabled={!allAnswered} className="flex-1">
-          Continuar →
+        <Button onClick={handleComplete} disabled={!allAnswered || isSubmitting} className="flex-1">
+          {isSubmitting ? "Procesando…" : "Continuar →"}
         </Button>
       </div>
 

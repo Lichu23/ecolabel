@@ -122,8 +122,8 @@ export function MandatoryMarkingQuestionnaire({ onComplete, onBack }: Props) {
                   : answer
                     ? q.sddrNote
                       ? "border-amber-300 bg-amber-50"
-                      : "border-orange-300 bg-orange-50"
-                    : "border-green-200 bg-green-50"
+                      : "border-green-200 bg-green-50"
+                    : "border-red-200 bg-red-50"
               }
             >
               <CardContent className="p-4 flex flex-col gap-2">
@@ -137,7 +137,7 @@ export function MandatoryMarkingQuestionnaire({ onComplete, onBack }: Props) {
                   {answer !== undefined && (
                     <span
                       className={`shrink-0 text-xs font-bold mt-0.5 ${
-                        answer ? "text-orange-700" : "text-green-700"
+                        answer ? "text-green-700" : "text-red-600"
                       }`}
                     >
                       {answer ? "SÍ" : "NO"}
