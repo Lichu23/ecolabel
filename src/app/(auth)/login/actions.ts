@@ -35,7 +35,7 @@ export async function signUp(formData: FormData) {
   // Supabase requires email confirmation by default.
   // If session is null, the user must confirm their email first.
   if (!data.session) {
-    return { error: "Revisa tu email y confirma tu cuenta antes de iniciar sesión." };
+    return { info: "Revisa tu email y confirma tu cuenta antes de iniciar sesión." };
   }
 
   revalidatePath("/", "layout");

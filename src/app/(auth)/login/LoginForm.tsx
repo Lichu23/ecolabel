@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 
-type AuthAction = (formData: FormData) => Promise<{ error: string } | void>;
+type AuthAction = (formData: FormData) => Promise<{ error: string } | { info: string } | void>;
 
 interface LoginFormProps {
   signIn: AuthAction;
@@ -15,18 +15,21 @@ interface LoginFormProps {
 export default function LoginForm({ signIn, signUp }: LoginFormProps) {
   const [mode, setMode] = useState<"login" | "signup">("login");
   const [error, setError] = useState<string | null>(null);
+  const [info, setInfo] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
+    setInfo(null);
 
     const formData = new FormData(e.currentTarget);
     const action = mode === "login" ? signIn : signUp;
 
     startTransition(async () => {
       const result = await action(formData);
-      if (result?.error) setError(result.error);
+      if (result && "error" in result) setError(result.error);
+      if (result && "info" in result) setInfo(result.info);
     });
   }
 
@@ -57,6 +60,12 @@ export default function LoginForm({ signIn, signUp }: LoginFormProps) {
         />
       </div>
 
+      {info && (
+        <p className="text-sm text-blue-700 bg-blue-50 border border-blue-200 rounded px-3 py-2">
+          {info}
+        </p>
+      )}
+
       {error && (
         <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded px-3 py-2">
           {error}
@@ -78,6 +87,7 @@ export default function LoginForm({ signIn, signUp }: LoginFormProps) {
           onClick={() => {
             setMode(mode === "login" ? "signup" : "login");
             setError(null);
+            setInfo(null);
           }}
           className="text-primary underline underline-offset-4 hover:no-underline"
         >

@@ -45,7 +45,7 @@ export async function NavBar() {
           <span className="text-xs text-muted-foreground">{user?.email}</span>
           <form action={signOut}>
             <Button variant="outline" size="sm" type="submit">
-              Salir
+              Logout
             </Button>
           </form>
         </div>
