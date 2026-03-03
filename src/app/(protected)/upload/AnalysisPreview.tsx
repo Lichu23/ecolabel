@@ -212,16 +212,12 @@ export function AnalysisPreview({ preview, companyName, isSaving, error, onSave,
                 <CardTitle className="text-base">Etiqueta generada</CardTitle>
               </CardHeader>
               <CardContent className="flex flex-col gap-3">
-                <div className="flex justify-center bg-gray-50 rounded-lg p-4">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={`data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(preview.labelSvg)))}`}
-                    alt="Etiqueta de reciclaje — haz clic para ampliar"
-                    className="max-w-full border shadow-sm rounded cursor-zoom-in"
-                    style={{ maxHeight: 320 }}
-                    onClick={() => setShowLabelModal(true)}
-                  />
-                </div>
+                <div
+                  className="flex justify-center bg-gray-50 rounded-lg p-4 cursor-zoom-in overflow-hidden [&>svg]:w-full [&>svg]:h-auto [&>svg]:max-h-80 [&>svg]:border [&>svg]:shadow-sm [&>svg]:rounded"
+                  style={{ maxHeight: 340 }}
+                  onClick={() => setShowLabelModal(true)}
+                  dangerouslySetInnerHTML={{ __html: preview.labelSvg }}
+                />
                 <p className="text-xs text-muted-foreground">Haz clic en la etiqueta para ampliarla</p>
                 {preview.labelPdf && (
                   <Button asChild size="sm" className="self-start">
@@ -296,14 +292,10 @@ export function AnalysisPreview({ preview, companyName, isSaving, error, onSave,
                 ✕
               </button>
             </div>
-            <div className="overflow-auto p-5 flex justify-center bg-gray-50">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={`data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(preview.labelSvg)))}`}
-                alt="Etiqueta de reciclaje"
-                className="w-full max-w-xl border shadow-sm rounded"
-              />
-            </div>
+            <div
+              className="overflow-auto p-5 flex justify-center bg-gray-50 [&>svg]:w-full [&>svg]:max-w-xl [&>svg]:border [&>svg]:shadow-sm [&>svg]:rounded"
+              dangerouslySetInnerHTML={{ __html: preview.labelSvg }}
+            />
             {preview.labelPdf && (
               <div className="flex justify-end px-5 py-3 border-t">
                 <Button asChild size="sm">

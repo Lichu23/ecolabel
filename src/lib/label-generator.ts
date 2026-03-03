@@ -79,16 +79,15 @@ function buildMaterialRow(
   const BADGE_X = 152;
 
   return `
-    <circle cx="22" cy="${y + 10}" r="4" fill="#006633"/>
-    <text x="30" y="${y + 13}" font-size="11" fill="#333333"
-          font-family="Arial, Helvetica, sans-serif">${part}: ${abbrev} (${code})</text>
+    <text x="18" y="${y + 13}" font-size="11" fill="#333333"
+          font-family="Arial, Helvetica, Noto Sans Symbols, Noto Sans Symbols2, sans-serif">&#9851; ${part}: ${abbrev} (${code})</text>
     <text x="28" y="${y + 27}" font-size="9" fill="#555555"
-          font-family="Arial, Helvetica, sans-serif">Deposita en el contenedor</text>
+          font-family="Arial, Helvetica, Noto Sans Symbols, Noto Sans Symbols2, sans-serif">Deposita en el contenedor</text>
     <rect x="${BADGE_X}" y="${y + 15}" width="${BADGE_W}" height="${BADGE_H}"
           fill="${badge.bg}" rx="3"/>
     <text x="${BADGE_X + BADGE_W / 2}" y="${y + 26}" text-anchor="middle"
           font-size="8" font-weight="bold" fill="${badge.text}"
-          font-family="Arial, Helvetica, sans-serif">${badge.label}</text>`;
+          font-family="Arial, Helvetica, Noto Sans Symbols, Noto Sans Symbols2, sans-serif">${badge.label}</text>`;
 }
 
 /**
@@ -115,16 +114,15 @@ function buildCompositeRow(
     .join("+");
 
   return `
-    <circle cx="22" cy="${y + 10}" r="4" fill="#006633"/>
-    <text x="30" y="${y + 13}" font-size="10" fill="#333333"
-          font-family="Arial, Helvetica, sans-serif">CONJUNTO ${escapeXml(partNames)}: ${escapeXml(codes)}</text>
+    <text x="18" y="${y + 13}" font-size="10" fill="#333333"
+          font-family="Arial, Helvetica, Noto Sans Symbols, Noto Sans Symbols2, sans-serif">&#9851; CONJUNTO ${escapeXml(partNames)}: ${escapeXml(codes)}</text>
     <text x="28" y="${y + 27}" font-size="9" fill="#555555"
-          font-family="Arial, Helvetica, sans-serif">Conjunto inseparable — Deposita en el contenedor</text>
+          font-family="Arial, Helvetica, Noto Sans Symbols, Noto Sans Symbols2, sans-serif">Conjunto inseparable — Deposita en el contenedor</text>
     <rect x="${BADGE_X}" y="${y + 15}" width="${BADGE_W}" height="${BADGE_H}"
           fill="${badge.bg}" rx="3"/>
     <text x="${BADGE_X + BADGE_W / 2}" y="${y + 26}" text-anchor="middle"
           font-size="8" font-weight="bold" fill="${badge.text}"
-          font-family="Arial, Helvetica, sans-serif">${badge.label}</text>`;
+          font-family="Arial, Helvetica, Noto Sans Symbols, Noto Sans Symbols2, sans-serif">${badge.label}</text>`;
 }
 
 /**
@@ -250,7 +248,7 @@ export async function generateLabelSVG(
   const overflowNote =
     renderItems.length > MAX_MATERIALS
       ? `<text x="18" y="${matFirstY + n * MAT_ROW_H + 2}" font-size="9"
-              fill="#888888" font-family="Arial, Helvetica, sans-serif">
+              fill="#888888" font-family="Arial, Helvetica, Noto Sans Symbols, Noto Sans Symbols2, sans-serif">
           +${renderItems.length - MAX_MATERIALS} material(es) más
         </text>`
       : "";
@@ -276,6 +274,7 @@ export async function generateLabelSVG(
   const complianceRows = complianceItems
     .map((item, i) => {
       const y = compFirstY + i * COMP_ROW_H;
+      const icon = item.passed ? "&#10003;" : "&#10007;";
       const color = item.passed ? "#1a7a1a" : "#cc0000";
       const checkText = truncate(escapeXml(item.check), MAX_CHECK);
       const detailText = item.detail ? truncate(escapeXml(item.detail), MAX_DETAIL) : "";
@@ -283,12 +282,11 @@ export async function generateLabelSVG(
       return `
     <rect x="18" y="${y + 3}" width="${BADGE_W}" height="${BADGE_H}" rx="2" fill="${badge.bg}"/>
     <text x="${18 + BADGE_W / 2}" y="${y + 12}" text-anchor="middle" font-size="7"
-          font-weight="bold" fill="${badge.text}" font-family="Arial, Helvetica, sans-serif">${badge.label}</text>
-    <circle cx="55" cy="${y + 9}" r="3.5" fill="${color}"/>
-    <text x="62" y="${y + 13}" font-size="9" fill="${color}"
-          font-family="Arial, Helvetica, sans-serif">${checkText}</text>${detailText ? `
-    <text x="62" y="${y + 24}" font-size="7.5" fill="#666666"
-          font-family="Arial, Helvetica, sans-serif">${detailText}</text>` : ""}`;
+          font-weight="bold" fill="${badge.text}" font-family="Arial, Helvetica, Noto Sans Symbols, Noto Sans Symbols2, sans-serif">${badge.label}</text>
+    <text x="50" y="${y + 13}" font-size="9" fill="${color}"
+          font-family="Arial, Helvetica, Noto Sans Symbols, Noto Sans Symbols2, sans-serif">${icon} ${checkText}</text>${detailText ? `
+    <text x="50" y="${y + 24}" font-size="7.5" fill="#666666"
+          font-family="Arial, Helvetica, Noto Sans Symbols, Noto Sans Symbols2, sans-serif">${detailText}</text>` : ""}`;
     })
     .join("");
 
@@ -310,21 +308,21 @@ export async function generateLabelSVG(
 
   <!-- Company name -->
   <text x="16" y="22" font-size="14" font-weight="bold" fill="#1a1a1a"
-        font-family="Arial, Helvetica, sans-serif">${escapeXml(companyName)}</text>
+        font-family="Arial, Helvetica, Noto Sans Symbols, Noto Sans Symbols2, sans-serif">${escapeXml(companyName)}</text>
 
   <!-- CIF (right-aligned) -->
   <text x="${WIDTH - 16}" y="22" font-size="11" fill="#555555" text-anchor="end"
-        font-family="Arial, Helvetica, sans-serif">CIF: ${escapeXml(cif)}</text>
+        font-family="Arial, Helvetica, Noto Sans Symbols, Noto Sans Symbols2, sans-serif">CIF: ${escapeXml(cif)}</text>
 
   <!-- Product + usage -->
   <text x="16" y="43" font-size="10" fill="#555555"
-        font-family="Arial, Helvetica, sans-serif">
+        font-family="Arial, Helvetica, Noto Sans Symbols, Noto Sans Symbols2, sans-serif">
     Producto: ${escapeXml(productName)} &#xB7; Uso: ${escapeXml(useLabel)}
   </text>
 
   <!-- ── Materials section ── -->
   <text x="16" y="${matTitleY + 12}" font-size="10" font-weight="bold"
-        fill="#2d7a2d" font-family="Arial, Helvetica, sans-serif">
+        fill="#2d7a2d" font-family="Arial, Helvetica, Noto Sans Symbols, Noto Sans Symbols2, sans-serif">
     MATERIALES E INSTRUCCIONES DE RECICLAJE
   </text>
   <line x1="16" y1="${matLineY}" x2="${WIDTH - 16}" y2="${matLineY}"
@@ -338,15 +336,15 @@ export async function generateLabelSVG(
   <rect x="16" y="${matFirstY + n * MAT_ROW_H + 4}" width="${WIDTH - 32}" height="22"
         fill="#dcfce7" rx="3"/>
   <text x="26" y="${matFirstY + n * MAT_ROW_H + 19}" font-size="9" font-weight="bold"
-        fill="#166534" font-family="Arial, Helvetica, sans-serif">
-    ENVASE REUTILIZABLE &#183; Indicaci&#243;n obligatoria Art. 13.2 RD 1055/2022
+        fill="#166534" font-family="Arial, Helvetica, Noto Sans Symbols, Noto Sans Symbols2, sans-serif">
+    &#9851; ENVASE REUTILIZABLE &#183; Indicaci&#243;n obligatoria Art. 13.2 RD 1055/2022
   </text>` : ""}
 
   <!-- ── Compliance section ── -->
   <line x1="16" y1="${compSectionY}" x2="${WIDTH - 16}" y2="${compSectionY}"
         stroke="#cccccc" stroke-width="1"/>
   <text x="16" y="${compTitleY}" font-size="10" font-weight="bold"
-        fill="#1a1a1a" font-family="Arial, Helvetica, sans-serif">
+        fill="#1a1a1a" font-family="Arial, Helvetica, Noto Sans Symbols, Noto Sans Symbols2, sans-serif">
     VALIDACI&#211;N DE CUMPLIMIENTO
   </text>
   <line x1="16" y1="${compLineY}" x2="${WIDTH - 16}" y2="${compLineY}"
@@ -367,27 +365,27 @@ export async function generateLabelSVG(
          href="${qrDataUrl}" preserveAspectRatio="xMidYMid meet"/>
   <text x="${QR_X + QR_SIZE / 2}" y="${QR_Y + QR_SIZE + 10}"
         text-anchor="middle" font-size="6" fill="#888888"
-        font-family="Arial, Helvetica, sans-serif">Justificaci&#243;n legal</text>
+        font-family="Arial, Helvetica, Noto Sans Symbols, Noto Sans Symbols2, sans-serif">Justificaci&#243;n legal</text>
 
   <!-- Footer text -->
   <text x="16" y="${footerLineY + 18}" font-size="8" fill="#555555"
-        font-family="Arial, Helvetica, sans-serif">
+        font-family="Arial, Helvetica, Noto Sans Symbols, Noto Sans Symbols2, sans-serif">
     Conforme Art. 13 ${escapeXml(regulatoryVersion)} (BOE-A-2022-22199) &#xB7; Fracci&#243;n de recogida separada
   </text>
   <text x="16" y="${footerLineY + 32}" font-size="8" fill="#555555"
-        font-family="Arial, Helvetica, sans-serif">
+        font-family="Arial, Helvetica, Noto Sans Symbols, Noto Sans Symbols2, sans-serif">
     Generado: ${escapeXml(dateStr)} &#xB7; ID: ${escapeXml(analysisId.slice(0, 8))}
   </text>
   <text x="16" y="${footerLineY + 46}" font-size="7" fill="#888888"
-        font-family="Arial, Helvetica, sans-serif">
+        font-family="Arial, Helvetica, Noto Sans Symbols, Noto Sans Symbols2, sans-serif">
     No sustituye asesor&#237;a legal profesional
   </text>
   <text x="16" y="${footerLineY + 60}" font-size="7" fill="#888888"
-        font-family="Arial, Helvetica, sans-serif">
+        font-family="Arial, Helvetica, Noto Sans Symbols, Noto Sans Symbols2, sans-serif">
     Identificaci&#243;n asistida &#8212; requiere confirmaci&#243;n del usuario
   </text>
   <text x="16" y="${footerLineY + 74}" font-size="7" fill="#92400e"
-        font-family="Arial, Helvetica, sans-serif">
+        font-family="Arial, Helvetica, Noto Sans Symbols, Noto Sans Symbols2, sans-serif">
     &#9888; ${escapeXml(PPWR_NOTICE.label)} &#xB7; Aplicable agosto 2026
   </text>
 </svg>`;

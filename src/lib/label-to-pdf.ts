@@ -2,12 +2,17 @@ import { join } from "path";
 import { Resvg } from "@resvg/resvg-js";
 import { PDFDocument } from "pdf-lib";
 
-// Noto Sans is bundled with Next.js — guaranteed to exist in any environment
-// including Vercel Lambda, where system fonts are absent.
-const FONT_PATH = join(
+// Noto Sans Latin — bundled with Next.js, covers all regular text characters.
+const NOTO_SANS_PATH = join(
   process.cwd(),
   "node_modules/next/dist/compiled/@vercel/og/noto-sans-v27-latin-regular.ttf"
 );
+
+// Noto Sans Symbols — covers U+2600-U+26FF Miscellaneous Symbols, including ♻ (U+267B).
+const NOTO_SYMBOLS_PATH = join(process.cwd(), "public/fonts/NotoSansSymbols-Regular.ttf");
+
+// Noto Sans Symbols 2 — covers ✓ (U+2713), ✗ (U+2717) and many additional blocks.
+const NOTO_SYMBOLS2_PATH = join(process.cwd(), "public/fonts/NotoSansSymbols2-Regular.ttf");
 
 /**
  * Converts an SVG string to a PDF buffer.
@@ -23,7 +28,7 @@ export async function labelSvgToPdf(svgString: string): Promise<Buffer> {
   const resvg = new Resvg(svgString, {
     fitTo: { mode: "width", value: 1040 }, // 2× the 520px SVG width
     font: {
-      fontFiles: [FONT_PATH],
+      fontFiles: [NOTO_SANS_PATH, NOTO_SYMBOLS_PATH, NOTO_SYMBOLS2_PATH],
       loadSystemFonts: false, // avoid crashes on font-less Lambda environments
     },
   });
