@@ -125,8 +125,6 @@ export async function POST(request: NextRequest) {
   // 5b. Apply product lookup table — merge lookup materials into AI result
   const lookupMaterials = lookupProductMaterials(productName, analysis);
   if (lookupMaterials) {
-    console.log(`[analyze] Product lookup HIT for "${productName}" → ${lookupMaterials.length} lookup material(s): ${lookupMaterials.map((m) => `${m.part}=${m.material_abbrev ?? "?"}`).join(", ")}`);
-
     // Build a map of lookup materials keyed by canonical part name so that
     // "tapa" (AI) matches "tapón" (lookup) via the same synonym normalisation.
     const lookupByPart = new Map<string, DetectedMaterial>(
@@ -143,13 +141,10 @@ export async function POST(request: NextRequest) {
         lookupByPart.delete(key); // always consume — prevents duplicate append
         const aiIsConfident = aiMat.confidence >= 0.8 && aiMat.material_code !== null;
         if (!aiIsConfident) {
-          console.log(`[analyze] Lookup override: "${aiMat.part}" AI(conf=${aiMat.confidence.toFixed(2)}, code=${aiMat.material_code ?? "null"}) → lookup ${matched.material_abbrev}(${matched.material_code})`);
           return {
             ...matched,
             visual_evidence: aiMat.visual_evidence || matched.visual_evidence,
           };
-        } else {
-          console.log(`[analyze] Lookup skipped: "${aiMat.part}" AI is confident (conf=${aiMat.confidence.toFixed(2)}, code=${aiMat.material_code})`);
         }
       }
       return aiMat;
@@ -157,13 +152,10 @@ export async function POST(request: NextRequest) {
 
     // Append any lookup materials whose parts weren't in the AI result
     for (const remaining of lookupByPart.values()) {
-      console.log(`[analyze] Lookup append: "${remaining.part}" ${remaining.material_abbrev}(${remaining.material_code}) — not detected by AI`);
       mergedMaterials.push(remaining);
     }
 
     analysis = { ...analysis, materials: mergedMaterials };
-  } else {
-    console.log(`[analyze] Product lookup MISS for "${productName}" — using AI result as-is`);
   }
 
 
@@ -190,11 +182,6 @@ export async function POST(request: NextRequest) {
   }
 
 
-  console.log(`[analyze] Final materials (${analysis.materials.length}) after all merges:`);
-  for (const m of analysis.materials) {
-    console.log(`[analyze]   "${m.part}" → ${m.material_abbrev ?? "?"}(${m.material_code ?? "?"}) conf=${m.confidence.toFixed(2)}`);
-  }
-
   // 6. RAG legal context
   const materialQuery = analysis.materials
     .map((m) => `${m.material_name} ${m.material_abbrev ?? ""} envase`)
@@ -203,8 +190,7 @@ export async function POST(request: NextRequest) {
   let legalContext = "";
   try {
     legalContext = await searchLegalContext(materialQuery);
-  } catch (err) {
-    console.log(`[analyze] RAG threw: ${err instanceof Error ? err.message : String(err)} — using fallback`);
+  } catch {
     legalContext = "No se pudo obtener contexto legal en este momento.";
   }
 

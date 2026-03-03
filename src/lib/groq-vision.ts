@@ -111,25 +111,12 @@ async function identifyPackagingFormat(
     });
 
     const raw = response.choices[0]?.message?.content;
-    if (!raw) {
-      console.log("[vision] Pass 1 → empty response, skipping format context");
-      return null;
-    }
+    if (!raw) return null;
 
     const result = PackagingFormatSchema.safeParse(JSON.parse(raw));
-    if (!result.success) {
-      console.log("[vision] Pass 1 → validation failed:", result.error.issues.map((i) => i.message).join(", "));
-      return null;
-    }
-
-    const fmt = result.data;
-    console.log(
-      `[vision] Pass 1 → format: ${fmt.format} | shape: "${fmt.shape_description}" | visible codes: [${fmt.visible_codes.join(", ") || "none"}]`
-    );
-    return fmt;
-  } catch (err) {
+    return result.success ? result.data : null;
+  } catch {
     // Pass 1 failure is non-fatal — Pass 2 runs without format context
-    console.log("[vision] Pass 1 → threw, skipping format context:", err instanceof Error ? err.message : String(err));
     return null;
   }
 }
@@ -226,8 +213,6 @@ export async function analyzePackaging(
 
   const primary = images[0];
 
-  console.log(`[vision] Starting analysis — ${images.length} image(s), mimeType: ${primary.mimeType}`);
-
   // Pass 1: identify packaging format from primary image (non-blocking failure)
   const packagingFormat = await identifyPackagingFormat(primary.base64, primary.mimeType);
 
@@ -263,15 +248,12 @@ export async function analyzePackaging(
     throw new Error("Groq returned an empty response");
   }
 
-  console.log(`[vision] Pass 2 raw response (${raw.length} chars):`, raw.slice(0, 600));
-
   let parsed: PackagingAnalysis;
 
   try {
     const rawParsed = JSON.parse(raw);
     const result = PackagingAnalysisSchema.safeParse(rawParsed);
     if (!result.success) {
-      console.log("[vision] Pass 2 validation errors:", result.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`).join(" | "));
       throw new Error(
         `Groq response failed validation: ${result.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`).join(", ")}`
       );
@@ -282,15 +264,6 @@ export async function analyzePackaging(
       throw new Error(`Groq returned invalid JSON: ${raw.slice(0, 200)}`);
     }
     throw err;
-  }
-
-  console.log(
-    `[vision] Pass 2 parsed → packaging_type: ${parsed.packaging_type} | materials: ${parsed.materials.length} | overall_confidence: ${parsed.overall_confidence} | guided_query_required: ${parsed.guided_query_required} | notes: "${parsed.notes}"`
-  );
-  for (const m of parsed.materials) {
-    console.log(
-      `[vision]   part: "${m.part}" | ${m.material_abbrev ?? "?"}(${m.material_code ?? "?"}) | conf: ${m.confidence.toFixed(2)} | method: ${m.inference_method} | evidence: "${m.visual_evidence}"`
-    );
   }
 
   // ── Cross-validate: evidence code must match material_code ────────────────
@@ -305,9 +278,6 @@ export async function analyzePackaging(
     const evidenceDigit = evidenceMatch[1] ?? evidenceMatch[2];
     const evidenceCode = evidenceDigit.padStart(2, "0");
     if (m.material_code !== evidenceCode) {
-      console.log(
-        `[vision] CONSISTENCY VIOLATION: "${m.part}" evidence cites code ${evidenceCode} but material_code=${m.material_code} — capping confidence to 0.7 to trigger guided review`
-      );
       m.confidence = Math.min(m.confidence, 0.7);
     }
   }
@@ -340,22 +310,9 @@ export async function analyzePackaging(
   }
   parsed.materials = Array.from(seen.values());
 
-  if (parsed.materials.length < preDeupCount) {
-    console.log(`[vision] Dedup: ${preDeupCount} → ${parsed.materials.length} materials (removed ${preDeupCount - parsed.materials.length} duplicate part(s))`);
-  }
-
   // Enforce guided_query_required based on actual confidence values
   const hasLowConfidence = parsed.materials.some((m) => m.confidence < 0.8);
-  const prevGuided = parsed.guided_query_required;
   parsed.guided_query_required = hasLowConfidence || parsed.overall_confidence < 0.8;
-  if (parsed.guided_query_required !== prevGuided) {
-    const reason = hasLowConfidence
-      ? `material conf < 0.8 (${parsed.materials.filter((m) => m.confidence < 0.8).map((m) => `${m.part}=${m.confidence.toFixed(2)}`).join(", ")})`
-      : `overall_confidence ${parsed.overall_confidence} < 0.8`;
-    console.log(`[vision] guided_query_required enforced: ${prevGuided} → true (${reason})`);
-  } else {
-    console.log(`[vision] guided_query_required: ${parsed.guided_query_required} (no override needed)`);
-  }
 
   return parsed;
 }
