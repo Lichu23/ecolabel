@@ -79,8 +79,9 @@ function buildMaterialRow(
   const BADGE_X = 152;
 
   return `
-    <text x="18" y="${y + 13}" font-size="11" fill="#333333"
-          font-family="Arial, Helvetica, sans-serif">&#9851; ${part}: ${abbrev} (${code})</text>
+    <circle cx="22" cy="${y + 10}" r="4" fill="#006633"/>
+    <text x="30" y="${y + 13}" font-size="11" fill="#333333"
+          font-family="Arial, Helvetica, sans-serif">${part}: ${abbrev} (${code})</text>
     <text x="28" y="${y + 27}" font-size="9" fill="#555555"
           font-family="Arial, Helvetica, sans-serif">Deposita en el contenedor</text>
     <rect x="${BADGE_X}" y="${y + 15}" width="${BADGE_W}" height="${BADGE_H}"
@@ -114,8 +115,9 @@ function buildCompositeRow(
     .join("+");
 
   return `
-    <text x="18" y="${y + 13}" font-size="10" fill="#333333"
-          font-family="Arial, Helvetica, sans-serif">&#9851; CONJUNTO ${escapeXml(partNames)}: ${escapeXml(codes)}</text>
+    <circle cx="22" cy="${y + 10}" r="4" fill="#006633"/>
+    <text x="30" y="${y + 13}" font-size="10" fill="#333333"
+          font-family="Arial, Helvetica, sans-serif">CONJUNTO ${escapeXml(partNames)}: ${escapeXml(codes)}</text>
     <text x="28" y="${y + 27}" font-size="9" fill="#555555"
           font-family="Arial, Helvetica, sans-serif">Conjunto inseparable — Deposita en el contenedor</text>
     <rect x="${BADGE_X}" y="${y + 15}" width="${BADGE_W}" height="${BADGE_H}"
@@ -274,7 +276,6 @@ export async function generateLabelSVG(
   const complianceRows = complianceItems
     .map((item, i) => {
       const y = compFirstY + i * COMP_ROW_H;
-      const icon = item.passed ? "&#10003;" : "&#10007;";
       const color = item.passed ? "#1a7a1a" : "#cc0000";
       const checkText = truncate(escapeXml(item.check), MAX_CHECK);
       const detailText = item.detail ? truncate(escapeXml(item.detail), MAX_DETAIL) : "";
@@ -283,9 +284,10 @@ export async function generateLabelSVG(
     <rect x="18" y="${y + 3}" width="${BADGE_W}" height="${BADGE_H}" rx="2" fill="${badge.bg}"/>
     <text x="${18 + BADGE_W / 2}" y="${y + 12}" text-anchor="middle" font-size="7"
           font-weight="bold" fill="${badge.text}" font-family="Arial, Helvetica, sans-serif">${badge.label}</text>
-    <text x="50" y="${y + 13}" font-size="9" fill="${color}"
-          font-family="Arial, Helvetica, sans-serif">${icon} ${checkText}</text>${detailText ? `
-    <text x="50" y="${y + 24}" font-size="7.5" fill="#666666"
+    <circle cx="55" cy="${y + 9}" r="3.5" fill="${color}"/>
+    <text x="62" y="${y + 13}" font-size="9" fill="${color}"
+          font-family="Arial, Helvetica, sans-serif">${checkText}</text>${detailText ? `
+    <text x="62" y="${y + 24}" font-size="7.5" fill="#666666"
           font-family="Arial, Helvetica, sans-serif">${detailText}</text>` : ""}`;
     })
     .join("");
@@ -337,7 +339,7 @@ export async function generateLabelSVG(
         fill="#dcfce7" rx="3"/>
   <text x="26" y="${matFirstY + n * MAT_ROW_H + 19}" font-size="9" font-weight="bold"
         fill="#166534" font-family="Arial, Helvetica, sans-serif">
-    &#9851; ENVASE REUTILIZABLE &#183; Indicaci&#243;n obligatoria Art. 13.2 RD 1055/2022
+    ENVASE REUTILIZABLE &#183; Indicaci&#243;n obligatoria Art. 13.2 RD 1055/2022
   </text>` : ""}
 
   <!-- ── Compliance section ── -->

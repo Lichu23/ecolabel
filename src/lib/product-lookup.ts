@@ -8,6 +8,12 @@ interface LookupEntry {
   /** Optional: only used as tie-breaker when multiple entries match */
   packaging_type?: string | string[];
   materials: DetectedMaterial[];
+  /**
+   * When true, lookup always wins over the AI result regardless of confidence.
+   * Use only for brand-specific entries where the material is known with certainty
+   * (e.g. Decathlon bottles are always HDPE, never PET).
+   */
+  forceOverride?: boolean;
 }
 
 // ─── Material factory helpers (Anexo II RD 1055/2022) ────────────────────────
@@ -80,6 +86,7 @@ const PRODUCT_LOOKUP: LookupEntry[] = [
       "botella deporte", "sport bottle", "botella trail", "botella running",
     ],
     packaging_type: "bottle",
+    forceOverride: true,
     materials: [
       HDPE("cuerpo", "Botella deportiva reutilizable de HDPE — código ♻2 en la base"),
       PP("tapón", "Tapón de rosca PP estándar"),
@@ -780,10 +787,16 @@ const PRODUCT_LOOKUP: LookupEntry[] = [
  *     - Still multiple or none → return first match as safe fallback.
  *  5. Multiple matches, no aiResult → return first match.
  */
+export interface LookupResult {
+  materials: DetectedMaterial[];
+  /** When true the lookup must win regardless of AI confidence */
+  forceOverride: boolean;
+}
+
 export function lookupProductMaterials(
   productName: string,
   aiResult?: { packaging_type: string }
-): DetectedMaterial[] | null {
+): LookupResult | null {
   const normalized = productName.toLowerCase();
 
   // Step 1: collect all entries where any keyword is a substring
@@ -794,8 +807,13 @@ export function lookupProductMaterials(
   // Step 2: no matches
   if (matches.length === 0) return null;
 
+  const toResult = (entry: LookupEntry): LookupResult => ({
+    materials: entry.materials,
+    forceOverride: entry.forceOverride ?? false,
+  });
+
   // Step 3: exactly one match — return it directly
-  if (matches.length === 1) return matches[0].materials;
+  if (matches.length === 1) return toResult(matches[0]);
 
   // Step 4: multiple matches — use packaging_type to disambiguate
   if (aiResult?.packaging_type) {
@@ -808,12 +826,12 @@ export function lookupProductMaterials(
       return types.some((t) => t.toLowerCase() === aiType);
     });
 
-    if (filtered.length === 1) return filtered[0].materials;
+    if (filtered.length === 1) return toResult(filtered[0]);
     // Multiple or zero after filtering → safest fallback is first filtered,
     // or first overall if no entries passed the filter
-    if (filtered.length > 0) return filtered[0].materials;
+    if (filtered.length > 0) return toResult(filtered[0]);
   }
 
   // Step 5: no aiResult or no entry passed the filter → first overall match
-  return matches[0].materials;
+  return toResult(matches[0]);
 }

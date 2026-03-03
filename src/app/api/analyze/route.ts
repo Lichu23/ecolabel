@@ -123,8 +123,10 @@ export async function POST(request: NextRequest) {
 
 
   // 5b. Apply product lookup table — merge lookup materials into AI result
-  const lookupMaterials = lookupProductMaterials(productName, analysis);
-  if (lookupMaterials) {
+  const lookupResult = lookupProductMaterials(productName, analysis);
+  if (lookupResult) {
+    const { materials: lookupMaterials, forceOverride } = lookupResult;
+
     // Build a map of lookup materials keyed by canonical part name so that
     // "tapa" (AI) matches "tapón" (lookup) via the same synonym normalisation.
     const lookupByPart = new Map<string, DetectedMaterial>(
@@ -133,14 +135,15 @@ export async function POST(request: NextRequest) {
 
     // Merge: for each AI material, check if a lookup entry covers the same part.
     // Always delete the matched key so it is NOT appended as "remaining" later.
-    // Override AI result only when AI is uncertain (confidence < 0.8 or no code).
+    // Override AI result when: AI is uncertain (confidence < 0.8 or no code),
+    // OR when forceOverride=true (brand-specific entries with known materials).
     const mergedMaterials = analysis.materials.map((aiMat) => {
       const key = canonicalPart(aiMat.part);
       const matched = lookupByPart.get(key);
       if (matched) {
         lookupByPart.delete(key); // always consume — prevents duplicate append
         const aiIsConfident = aiMat.confidence >= 0.8 && aiMat.material_code !== null;
-        if (!aiIsConfident) {
+        if (forceOverride || !aiIsConfident) {
           return {
             ...matched,
             visual_evidence: aiMat.visual_evidence || matched.visual_evidence,
