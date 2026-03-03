@@ -278,24 +278,28 @@ export function UploadClient({ companyName }: { companyName: string }) {
 
   if (phase === "wizard") {
     return (
-      <PackagingTypeWizard
-        onComplete={(use) => { setPackagingUse(use); setPhase("questionnaire"); }}
-      />
+      <div className="flex justify-center">
+        <PackagingTypeWizard
+          onComplete={(use) => { setPackagingUse(use); setPhase("questionnaire"); }}
+        />
+      </div>
     );
   }
 
   if (phase === "questionnaire") {
     return (
-      <MandatoryMarkingQuestionnaire
-        onComplete={(inputs) => { setMarkingInputs(inputs); setPhase("form"); }}
-        onBack={() => setPhase("wizard")}
-      />
+      <div className="flex justify-center">
+        <MandatoryMarkingQuestionnaire
+          onComplete={(inputs) => { setMarkingInputs(inputs); setPhase("form"); }}
+          onBack={() => setPhase("wizard")}
+        />
+      </div>
     );
   }
 
   if (phase === "analyzing") {
     return (
-      <div className="max-w-lg">
+      <div className="max-w-lg mx-auto">
         <h1 className="text-2xl font-bold mb-6">Analizar envase</h1>
         <Card>
           <CardContent className="flex flex-col items-center gap-4 py-12 text-center">
@@ -309,31 +313,35 @@ export function UploadClient({ companyName }: { companyName: string }) {
 
   if (phase === "confirming" && confirming) {
     return (
-      <MaterialConfirmationFlow
-        data={confirming}
-        onComplete={handleConfirmationComplete}
-        onBack={() => { setPhase("form"); setConfirming(null); }}
-      />
+      <div className="flex justify-center">
+        <MaterialConfirmationFlow
+          data={confirming}
+          onComplete={handleConfirmationComplete}
+          onBack={() => { setPhase("form"); setConfirming(null); }}
+        />
+      </div>
     );
   }
 
   if (phase === "decomposing" && decomposingData) {
     return (
-      <MaterialDecomposer
-        analysis={decomposingData.correctedAnalysis}
-        productName={decomposingData.productName}
-        packagingUse={decomposingData.packagingUse}
-        onComplete={handleDecompositionComplete}
-        onBack={() => {
-          if (confirming) {
-            setPhase("confirming");
-          } else {
-            URL.revokeObjectURL(decomposingData.imageObjectUrl);
-            setPhase("form");
-            setDecomposingData(null);
-          }
-        }}
-      />
+      <div className="flex justify-center">
+        <MaterialDecomposer
+          analysis={decomposingData.correctedAnalysis}
+          productName={decomposingData.productName}
+          packagingUse={decomposingData.packagingUse}
+          onComplete={handleDecompositionComplete}
+          onBack={() => {
+            if (confirming) {
+              setPhase("confirming");
+            } else {
+              URL.revokeObjectURL(decomposingData.imageObjectUrl);
+              setPhase("form");
+              setDecomposingData(null);
+            }
+          }}
+        />
+      </div>
     );
   }
 

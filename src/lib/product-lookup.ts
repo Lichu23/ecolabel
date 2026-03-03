@@ -70,12 +70,30 @@ const CPAP = (part = "cuerpo", ev = "Envase flexible laminado") =>
 // ─── Lookup table (55 entries, Anexo II RD 1055/2022) ────────────────────────
 
 const PRODUCT_LOOKUP: LookupEntry[] = [
-  // ── 1. Agua mineral (PET) ─────────────────────────────────────────────────
+  // ── 0. Botella deportiva reutilizable (HDPE) ──────────────────────────────
+  // Must be BEFORE the generic water bottle entry — Decathlon/sport bottles
+  // are HDPE (02), NOT PET, even though they are also "botellas de agua".
   {
     keywords: [
-      "agua mineral", "agua embotellada", "botella de agua", "agua con gas",
+      "decathlon", "nalgene", "camelbak", "dopper", "botella deportiva",
+      "botella reutilizable", "bidón deportivo", "bidon deportivo",
+      "botella deporte", "sport bottle", "botella trail", "botella running",
+    ],
+    packaging_type: "bottle",
+    materials: [
+      HDPE("cuerpo", "Botella deportiva reutilizable de HDPE — código ♻2 en la base"),
+      PP("tapón", "Tapón de rosca PP estándar"),
+    ],
+  },
+
+  // ── 1. Agua mineral (PET) ─────────────────────────────────────────────────
+  // Keywords kept specific to branded/mineral water — "botella de agua" removed
+  // (too broad: also matches Decathlon, filtered water pitchers, etc.)
+  {
+    keywords: [
+      "agua mineral", "agua embotellada", "agua con gas",
       "agua sin gas", "fontvella", "font vella", "aquarel", "evian",
-      "agua de manantial",
+      "agua de manantial", "agua mineral natural",
     ],
     materials: [
       PET("cuerpo", "Botella PET transparente estándar para agua mineral"),

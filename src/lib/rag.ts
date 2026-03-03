@@ -29,7 +29,10 @@ export async function searchLegalContext(
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
 
+  console.log(`[rag] Query: "${query}"`);
+
   const embedding = await embedQuery(query);
+  console.log(`[rag] Embedding computed (dim=${embedding.length})`);
 
   const { data, error } = await supabase.rpc("search_legal_docs", {
     query_embedding: embedding,
@@ -42,7 +45,13 @@ export async function searchLegalContext(
   const matches = (data as LegalMatch[]) ?? [];
 
   if (matches.length === 0) {
+    console.log(`[rag] Vector search → 0 matches (threshold=${similarityThreshold}) — using FALLBACK_LEGAL_CONTEXT`);
     return FALLBACK_LEGAL_CONTEXT;
+  }
+
+  console.log(`[rag] Vector search → ${matches.length} matches (threshold=${similarityThreshold}):`);
+  for (const m of matches) {
+    console.log(`[rag]   sim=${m.similarity.toFixed(3)} | ${m.article_ref} | "${m.title}"`);
   }
 
   // Rerank: second-pass precision filter — keep top 5 from the 8 vector candidates
@@ -51,8 +60,13 @@ export async function searchLegalContext(
     const docs = matches.map((m) => `${m.title}\n${m.content}`);
     const reranked = await rerankDocuments(query, docs, 5);
     finalMatches = reranked.map((r) => matches[r.index]);
-  } catch {
+    console.log(`[rag] Reranked ${matches.length} → ${finalMatches.length} results:`);
+    for (let i = 0; i < finalMatches.length; i++) {
+      console.log(`[rag]   #${i + 1} rerank_score=${reranked[i].relevanceScore.toFixed(3)} | ${finalMatches[i].article_ref} | "${finalMatches[i].title}"`);
+    }
+  } catch (err) {
     // Rerank failure is non-fatal — fall back to vector search order
+    console.log(`[rag] Rerank failed (${err instanceof Error ? err.message : String(err)}) — using vector order, top ${Math.min(5, matches.length)}`);
     finalMatches = matches.slice(0, 5);
   }
 

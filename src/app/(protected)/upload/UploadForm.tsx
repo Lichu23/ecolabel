@@ -57,7 +57,7 @@ export function UploadForm({
   }
 
   return (
-    <div className="max-w-lg">
+    <div className="max-w-lg mx-auto">
       <h1 className="text-2xl font-bold mb-6">Analizar envase</h1>
       <Card>
         <CardHeader>
