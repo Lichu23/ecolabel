@@ -1,0 +1,13 @@
+# Test files
+src/**/__tests__
+src/**/*.test.ts
+src/**/*.test.tsx
+vitest.config.ts
+coverage/
+
+# Dev scripts
+scripts/
+
+# Local env (never deploy secrets)
+.env.local
+.env.*.local

@@ -14,6 +14,7 @@ import { PackagingTypeWizard } from "./PackagingTypeWizard";
 import { MandatoryMarkingQuestionnaire } from "./MandatoryMarkingQuestionnaire";
 import type { MandatoryMarkingInputs } from "@/lib/legal-decisions";
 import { scanForProhibitedLanguage } from "@/lib/greenwashing-guard";
+import { track } from "@vercel/analytics";
 
 type Phase = "wizard" | "questionnaire" | "form" | "analyzing" | "confirming" | "decomposing" | "preview" | "saving";
 
@@ -161,6 +162,7 @@ export function UploadClient({ companyName }: { companyName: string }) {
 
     setError(null);
     setPhase("analyzing");
+    track("upload_started", { packaging_use: packagingUse });
 
     startTransition(async () => {
       try {
@@ -283,6 +285,7 @@ export function UploadClient({ companyName }: { companyName: string }) {
           return;
         }
 
+        track("label_generated", { packaging_use: preview.packagingUse });
         router.push(`/analyze/${saveData.analysis_id}`);
       } catch {
         setError("Error de red. Comprueba tu conexión e inténtalo de nuevo.");

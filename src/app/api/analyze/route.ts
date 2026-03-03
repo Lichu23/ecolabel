@@ -25,7 +25,31 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  // 2. Parse multipart form data
+  // 2. Fetch company + enforce daily analysis limit
+  const DAILY_LIMIT = 5;
+  const { data: company } = await supabase
+    .from("companies")
+    .select("id, name, cif")
+    .eq("user_id", user.id)
+    .single();
+
+  if (company) {
+    const todayStart = new Date();
+    todayStart.setUTCHours(0, 0, 0, 0);
+    const { count: todayCount } = await supabase
+      .from("analyses")
+      .select("id, products!inner(company_id)", { count: "exact", head: true })
+      .eq("products.company_id", company.id)
+      .gte("created_at", todayStart.toISOString());
+    if ((todayCount ?? 0) >= DAILY_LIMIT) {
+      return NextResponse.json(
+        { error: `Límite diario alcanzado. Máximo ${DAILY_LIMIT} análisis por día durante el prototipo.` },
+        { status: 429 }
+      );
+    }
+  }
+
+  // 3. Parse multipart form data
   let formData: FormData;
   try {
     formData = await request.formData();
@@ -54,11 +78,18 @@ export async function POST(request: NextRequest) {
   // 3. Validate image types (max 5 images)
   const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
   const MAX_IMAGES = 5;
+  const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
   const validFiles = imageFiles.slice(0, MAX_IMAGES);
   for (const f of validFiles) {
     if (!allowedTypes.includes(f.type)) {
       return NextResponse.json(
         { error: "All images must be JPEG, PNG or WebP" },
+        { status: 400 }
+      );
+    }
+    if (f.size > MAX_FILE_SIZE) {
+      return NextResponse.json(
+        { error: "Each image must be under 5 MB" },
         { status: 400 }
       );
     }
@@ -90,8 +121,6 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // DEBUG — log raw Groq materials before any merging
-  console.log("[analyze] Groq raw materials:", analysis.materials.map((m) => `${m.part} (${m.material_code})`));
 
   // 5b. Apply product lookup table — merge lookup materials into AI result
   const lookupMaterials = lookupProductMaterials(productName, analysis);
@@ -129,8 +158,6 @@ export async function POST(request: NextRequest) {
     analysis = { ...analysis, materials: mergedMaterials };
   }
 
-  // DEBUG — log materials after lookup merge
-  console.log("[analyze] After lookup merge:", analysis.materials.map((m) => `${m.part} (${m.material_code})`));
 
   // Safety deduplication after lookup merge — the lookup can reintroduce
   // duplicates if Groq already returned a part twice and the lookup key was
@@ -154,7 +181,6 @@ export async function POST(request: NextRequest) {
     analysis = { ...analysis, materials: Array.from(seen.values()) };
   }
 
-  console.log("[analyze] Final materials sent to client:", analysis.materials.map((m) => `${m.part} (${m.material_code})`));
 
   // 6. RAG legal context
   const materialQuery = analysis.materials
@@ -186,12 +212,6 @@ export async function POST(request: NextRequest) {
   let labelSvg: string | null = null;
   let labelPdf: string | null = null;
   try {
-    const { data: company } = await supabase
-      .from("companies")
-      .select("name, cif")
-      .eq("user_id", user.id)
-      .single();
-
     if (company) {
       const baseUrl =
         process.env.NEXT_PUBLIC_APP_URL ??
