@@ -75,6 +75,11 @@ const MOCK_ANALYSIS = {
   notes: "Standard PET water bottle",
 };
 
+// Pass 1 (PackagingFormat) response — consumed by identifyPackagingFormat, non-fatal on mismatch
+const MOCK_PASS1_RESPONSE = {
+  choices: [{ message: { content: JSON.stringify({ format: "bottle", shape_description: "Botella estándar", visible_codes: [] }) } }],
+};
+
 const MOCK_LEGAL_CHUNK = {
   id: "legal-001",
   title: "Identificación materiales plásticos",
@@ -136,7 +141,7 @@ describe("E2E Pipeline — photo upload → label generation", () => {
     expect(legalContext).toContain("RD 1055/2022");
 
     expect(label.svg).toContain("<svg");
-    expect(label.qrUrl).toMatch(/\/label\/test-analysis-id-0001$/);
+    expect(label.qrUrl).toMatch(/\/verify\/test-analysis-id-0001$/);
   });
 
   it("propagates material data from vision → label correctly", async () => {
@@ -160,6 +165,9 @@ describe("E2E Pipeline — photo upload → label generation", () => {
   });
 
   it("sets guided_query_required when the AI is not confident enough", async () => {
+    // Pass 1 mock — consumed by identifyPackagingFormat (non-fatal on any failure)
+    mockCreate.mockResolvedValueOnce(MOCK_PASS1_RESPONSE);
+    // Pass 2 mock — the low-confidence analysis that triggers guided_query_required
     mockCreate.mockResolvedValueOnce({
       choices: [
         {

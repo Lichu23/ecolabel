@@ -61,10 +61,10 @@ describe("generateLabelSVG() — Label QR & structure", () => {
     expect(typeof result.qrUrl).toBe("string");
   });
 
-  it("qrUrl points to /label/{analysisId}", async () => {
+  it("qrUrl points to /verify/{analysisId}", async () => {
     const { qrUrl } = await generateLabelSVG(LABEL_DATA);
 
-    expect(qrUrl).toBe(`${BASE_URL}/label/${ANALYSIS_ID}`);
+    expect(qrUrl).toBe(`${BASE_URL}/verify/${ANALYSIS_ID}`);
   });
 
   it("SVG is well-formed XML starting with <?xml", async () => {

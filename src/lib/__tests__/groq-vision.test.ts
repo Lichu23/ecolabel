@@ -19,6 +19,22 @@ import { analyzePackaging } from "@/lib/groq-vision";
 
 const MOCK_BASE64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==";
 
+/** Valid Pass 1 (PackagingFormat) response mock. */
+function makePass1Response(): object {
+  return {
+    choices: [{
+      message: {
+        content: JSON.stringify({
+          format: "bottle",
+          shape_description: "Botella estándar",
+          visible_codes: [],
+        }),
+      },
+    }],
+  };
+}
+
+/** Valid Pass 2 (PackagingAnalysis) response mock. */
 function makeGroqResponse(analysis: Partial<PackagingAnalysis>): object {
   return {
     choices: [
@@ -46,6 +62,7 @@ describe("analyzePackaging()", () => {
   });
 
   it("returns a valid PackagingAnalysis from a well-formed Groq response", async () => {
+    mockCreate.mockResolvedValueOnce(makePass1Response());
     mockCreate.mockResolvedValueOnce(
       makeGroqResponse({
         packaging_type: "bottle",
@@ -74,6 +91,7 @@ describe("analyzePackaging()", () => {
   });
 
   it("enforces guided_query_required = true when any material has confidence < 0.8", async () => {
+    mockCreate.mockResolvedValueOnce(makePass1Response());
     mockCreate.mockResolvedValueOnce(
       makeGroqResponse({
         materials: [
@@ -105,6 +123,7 @@ describe("analyzePackaging()", () => {
   });
 
   it("enforces guided_query_required = true when overall_confidence < 0.8", async () => {
+    mockCreate.mockResolvedValueOnce(makePass1Response());
     mockCreate.mockResolvedValueOnce(
       makeGroqResponse({
         materials: [
@@ -128,6 +147,7 @@ describe("analyzePackaging()", () => {
   });
 
   it("keeps guided_query_required = false when all confidences are ≥ 0.8", async () => {
+    mockCreate.mockResolvedValueOnce(makePass1Response());
     mockCreate.mockResolvedValueOnce(
       makeGroqResponse({
         materials: [
@@ -151,6 +171,7 @@ describe("analyzePackaging()", () => {
   });
 
   it("throws when Groq returns an empty response", async () => {
+    mockCreate.mockResolvedValueOnce(makePass1Response());
     mockCreate.mockResolvedValueOnce({
       choices: [{ message: { content: "" } }],
     });
@@ -161,6 +182,7 @@ describe("analyzePackaging()", () => {
   });
 
   it("throws when Groq returns invalid JSON", async () => {
+    mockCreate.mockResolvedValueOnce(makePass1Response());
     mockCreate.mockResolvedValueOnce({
       choices: [{ message: { content: "not json at all {broken" } }],
     });
@@ -171,7 +193,21 @@ describe("analyzePackaging()", () => {
   });
 
   it("sends the correct mimeType in the image_url", async () => {
-    mockCreate.mockResolvedValue(makeGroqResponse({}));
+    mockCreate.mockResolvedValueOnce(makePass1Response());
+    mockCreate.mockResolvedValueOnce(
+      makeGroqResponse({
+        materials: [
+          {
+            part: "cuerpo",
+            material_name: "Polietileno tereftalato",
+            material_code: "01",
+            material_abbrev: "PET",
+            confidence: 0.95,
+            visual_evidence: "Transparent",
+          },
+        ],
+      })
+    );
 
     await analyzePackaging([{ base64: MOCK_BASE64, mimeType: "image/png" }]);
 
